@@ -10,11 +10,15 @@ View your app in AI Studio: https://ai.studio/apps/drive/1Fz1oub1Aq6TUGMydidXIJR
 
 ## Run Locally
 
-**Prerequisites:**  Node.js
+**Prerequisites:**  Nix (dev environment provided via `flake.nix`)
 
+1. Enter the environment:
+   `direnv allow` (or `nix develop`)
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+2. Install dependencies:
+   `just install`
+
+3. Set the `GEMINI_API_KEY` in `src/.env.local` to your Gemini API key.
+
+4. Run the app:
+   `just dev`
