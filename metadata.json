@@ -1,0 +1,5 @@
+{
+  "name": "SystemVisualizer",
+  "description": "An advanced engineering system viewer for tracking nested subsystems and roll-up test readiness metrics for complex engineering projects.",
+  "requestFramePermissions": []
+}
