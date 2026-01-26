@@ -22,3 +22,10 @@ View your app in AI Studio: https://ai.studio/apps/drive/1Fz1oub1Aq6TUGMydidXIJR
 
 4. Run the app:
    `just dev`
+
+## Development Workflow
+
+This project uses a spec sheet driver workflow.
+- **Specifications**: See [specifications.md](./specifications.md) for current feature requirements and design specs.
+- **Agent Instructions**: See [agents.md](./agents.md) for how to work with the spec sheet.
+
