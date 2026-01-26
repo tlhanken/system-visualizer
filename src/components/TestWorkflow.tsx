@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
 import { SystemNode, ReadinessStatus, TestAsset } from '../types';
 
 interface TestWorkflowProps {
@@ -6,60 +6,123 @@ interface TestWorkflowProps {
   selectedAssetId: string | null;
   onSelectAsset: (asset: TestAsset | null) => void;
   onNavigateToParent?: () => void;
+  onNavigateToSubsystem?: (sub: SystemNode) => void;
 }
 
 const CANVAS_SIZE = 5000;
 const VIEWPORT_CENTER = 2500;
 const ASSET_CARD_WIDTH = 320;
-const ASSET_CARD_HEIGHT = 160; 
+const ASSET_CARD_HEIGHT = 125; 
 const TERMINAL_SIZE = 120;
 const HORIZONTAL_SPACING = 500;
 const VERTICAL_GAP = 50;
+const LINE_GAP = 6; // Increased gap for cleaner separation from terminal borders
+
+interface AssetWithPos extends TestAsset {
+  x: number;
+  y: number;
+  rank: number;
+}
 
 const TestWorkflow: React.FC<TestWorkflowProps> = ({ 
   system, 
   selectedAssetId, 
   onSelectAsset,
-  onNavigateToParent 
+  onNavigateToParent,
+  onNavigateToSubsystem
 }) => {
   const assets = system.testAssets;
   const subsystems = system.subsystems || [];
   const [zoom, setZoom] = useState(0.85);
   const containerRef = useRef<HTMLDivElement>(null);
   const prevZoomRef = useRef<number>(zoom);
+  const zoomRef = useRef<number>(zoom); 
   const isProgrammaticZoomRef = useRef(false);
   const targetCenterRef = useRef<{ x: number, y: number, smooth: boolean } | null>(null);
   
   const [isPanning, setIsPanning] = useState(false);
   const dragRef = useRef({ startX: 0, startY: 0, scrollLeft: 0, scrollTop: 0, moved: false });
 
-  // Geometry calculations
-  const totalAssetsHeight = assets.length * (ASSET_CARD_HEIGHT + VERTICAL_GAP) - VERTICAL_GAP;
-  const startY = VIEWPORT_CENTER - totalAssetsHeight / 2;
-  const beginX = VIEWPORT_CENTER - HORIZONTAL_SPACING;
-  const endX = VIEWPORT_CENTER + HORIZONTAL_SPACING;
-  const assetsX = VIEWPORT_CENTER - ASSET_CARD_WIDTH / 2;
+  // Keep zoomRef in sync
+  useEffect(() => {
+    zoomRef.current = zoom;
+  }, [zoom]);
 
-  // Subsystem terminal layout
-  const subsystemsX = beginX - HORIZONTAL_SPACING;
+  // Compute Ranks and Positions for Assets
+  const positionedAssets = useMemo(() => {
+    if (assets.length === 0) return [];
+
+    const assetMap = new Map<string, TestAsset>(assets.map(a => [a.id, a]));
+    const ranks = new Map<string, number>();
+
+    const getRank = (id: string): number => {
+      if (ranks.has(id)) return ranks.get(id)!;
+      const asset = assetMap.get(id);
+      if (!asset || !asset.dependsOn || asset.dependsOn.length === 0) {
+        ranks.set(id, 0);
+        return 0;
+      }
+      const rank = Math.max(...asset.dependsOn.map(pId => getRank(pId))) + 1;
+      ranks.set(id, rank);
+      return rank;
+    };
+
+    assets.forEach(a => getRank(a.id));
+
+    const rankGroups: Record<number, string[]> = {};
+    assets.forEach(a => {
+      const r = ranks.get(a.id) || 0;
+      if (!rankGroups[r]) rankGroups[r] = [];
+      rankGroups[r].push(a.id);
+    });
+
+    const maxRank = Math.max(...Object.keys(rankGroups).map(Number));
+    const totalWorkflowWidth = (maxRank + 1) * ASSET_CARD_WIDTH + maxRank * (HORIZONTAL_SPACING / 2);
+    const startX = VIEWPORT_CENTER - totalWorkflowWidth / 2;
+
+    const result: AssetWithPos[] = [];
+    Object.entries(rankGroups).forEach(([rankStr, ids]) => {
+      const r = Number(rankStr);
+      const colX = startX + r * (ASSET_CARD_WIDTH + HORIZONTAL_SPACING / 2);
+      const colHeight = ids.length * (ASSET_CARD_HEIGHT + VERTICAL_GAP) - VERTICAL_GAP;
+      const colStartY = VIEWPORT_CENTER - colHeight / 2;
+
+      ids.forEach((id, idx) => {
+        const asset = assetMap.get(id)!;
+        result.push({
+          ...asset,
+          x: colX,
+          y: colStartY + idx * (ASSET_CARD_HEIGHT + VERTICAL_GAP),
+          rank: r
+        });
+      });
+    });
+
+    return result;
+  }, [assets]);
+
+  // Dimensions for fitting
+  const firstColX = positionedAssets.length > 0 ? Math.min(...positionedAssets.map(a => a.x)) : VIEWPORT_CENTER - ASSET_CARD_WIDTH / 2;
+  const lastColX = positionedAssets.length > 0 ? Math.max(...positionedAssets.map(a => a.x)) : VIEWPORT_CENTER - ASSET_CARD_WIDTH / 2;
+  const beginX = firstColX - HORIZONTAL_SPACING / 1.5;
+  const endX = lastColX + ASSET_CARD_WIDTH + HORIZONTAL_SPACING / 1.5 - TERMINAL_SIZE;
+  const subsystemsX = beginX - HORIZONTAL_SPACING / 1.5;
   const totalSubsystemsHeight = subsystems.length * (TERMINAL_SIZE + 100) - 100;
   const subStartY = VIEWPORT_CENTER - totalSubsystemsHeight / 2;
 
   const handleFitToView = useCallback((smooth = true) => {
     if (!containerRef.current) return;
 
-    // Calculate bounds of the content
     const leftBound = subsystems.length > 0 ? subsystemsX : beginX;
     const rightBound = endX + TERMINAL_SIZE;
     
-    // Y bounds considering terminals and assets
     const topBound = Math.min(
       subsystems.length > 0 ? subStartY : (VIEWPORT_CENTER - TERMINAL_SIZE / 2),
-      assets.length > 0 ? startY : (VIEWPORT_CENTER - TERMINAL_SIZE / 2)
+      positionedAssets.length > 0 ? Math.min(...positionedAssets.map(a => a.y)) : (VIEWPORT_CENTER - TERMINAL_SIZE / 2)
     );
     const bottomBound = Math.max(
       subsystems.length > 0 ? (subStartY + totalSubsystemsHeight + 100) : (VIEWPORT_CENTER + TERMINAL_SIZE / 2 + 100),
-      assets.length > 0 ? (startY + totalAssetsHeight) : (VIEWPORT_CENTER + TERMINAL_SIZE / 2)
+      positionedAssets.length > 0 ? Math.max(...positionedAssets.map(a => a.y + ASSET_CARD_HEIGHT)) : (VIEWPORT_CENTER + TERMINAL_SIZE / 2)
     );
 
     const contentWidth = rightBound - leftBound;
@@ -76,28 +139,26 @@ const TestWorkflow: React.FC<TestWorkflowProps> = ({
     const centerX = (leftBound + rightBound) / 2;
     const centerY = (topBound + bottomBound) / 2;
 
-    // If zoom is essentially unchanged, just scroll immediately
-    if (Math.abs(newZoom - zoom) < 0.001) {
+    const currentZoom = zoomRef.current;
+    if (Math.abs(newZoom - currentZoom) < 0.01) {
       containerRef.current.scrollTo({
-        left: centerX * zoom - viewportWidth / 2,
-        top: centerY * zoom - viewportHeight / 2,
+        left: centerX * currentZoom - viewportWidth / 2,
+        top: centerY * currentZoom - viewportHeight / 2,
         behavior: smooth ? 'smooth' : 'auto'
       });
       return;
     }
 
-    // Otherwise, stage the centering for after the zoom state is applied to the DOM
     targetCenterRef.current = { x: centerX, y: centerY, smooth };
     isProgrammaticZoomRef.current = true;
     setZoom(newZoom);
-  }, [subsystems, assets, beginX, endX, subsystemsX, subStartY, totalSubsystemsHeight, startY, totalAssetsHeight, zoom]);
+  }, [subsystems.length, subsystemsX, beginX, endX, subStartY, totalSubsystemsHeight, positionedAssets]);
 
   useLayoutEffect(() => {
     if (containerRef.current && prevZoomRef.current !== zoom) {
       const container = containerRef.current;
       const { clientWidth, clientHeight, scrollLeft, scrollTop } = container;
 
-      // Only apply focal point preservation if it was a user zoom (not a fit-to-view call)
       if (isProgrammaticZoomRef.current && targetCenterRef.current) {
         const { x, y, smooth } = targetCenterRef.current;
         container.scrollTo({
@@ -117,14 +178,12 @@ const TestWorkflow: React.FC<TestWorkflowProps> = ({
     prevZoomRef.current = zoom;
   }, [zoom]);
 
-  // Handle system change - CRITICAL FIX: Only run when system.id changes, not on every zoom update
   useEffect(() => {
     const timer = setTimeout(() => {
-      // Use the function directly without it being in dependency to avoid re-triggering on zoom
       handleFitToView(false); 
-    }, 50);
+    }, 100);
     return () => clearTimeout(timer);
-  }, [system.id]); // Removed handleFitToView from dependency array
+  }, [system.id, handleFitToView]); 
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return;
@@ -167,7 +226,7 @@ const TestWorkflow: React.FC<TestWorkflowProps> = ({
       e.preventDefault();
       const delta = -e.deltaY;
       const factor = Math.pow(1.1, delta / 100);
-      setZoom(z => Math.min(Math.max(z * factor, 0.2), 2));
+      setZoom(z => Math.min(Math.max(z * factor, 0.1), 3));
     }
   };
 
@@ -194,9 +253,9 @@ const TestWorkflow: React.FC<TestWorkflowProps> = ({
   const getStatusIcon = (status: ReadinessStatus) => {
     switch (status) {
       case ReadinessStatus.AVAILABLE: return 'check_circle';
-      case ReadinessStatus.IN_PROGRESS: return 'settings_backup_restore';
-      case ReadinessStatus.NOT_MADE: return 'construction';
-      case ReadinessStatus.DEFERRED: return 'motion_photos_paused';
+      case ReadinessStatus.IN_PROGRESS: return 'radio_button_checked';
+      case ReadinessStatus.NOT_MADE: return 'error_outline';
+      case ReadinessStatus.DEFERRED: return 'block';
       default: return 'help';
     }
   };
@@ -235,24 +294,6 @@ const TestWorkflow: React.FC<TestWorkflowProps> = ({
         </div>
       </div>
 
-      {/* Floating Status Legend */}
-      <div className="absolute top-24 left-8 flex flex-col gap-2 z-[65]" onClick={e => e.stopPropagation()}>
-        <div className="bg-background-dark/90 backdrop-blur-md border border-white/10 p-3 rounded-lg shadow-2xl flex items-center gap-5">
-          <div className="flex items-center gap-2">
-            <div className={`size-2 rounded-full ${getStatusBg(ReadinessStatus.AVAILABLE)}`}></div>
-            <span className="text-[9px] uppercase tracking-[0.2em] text-slate-400 font-bold">Ready</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className={`size-2 rounded-full ${getStatusBg(ReadinessStatus.IN_PROGRESS)}`}></div>
-            <span className="text-[9px] uppercase tracking-[0.2em] text-slate-400 font-bold">In-Work</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className={`size-2 rounded-full ${getStatusBg(ReadinessStatus.NOT_MADE)}`}></div>
-            <span className="text-[9px] uppercase tracking-[0.2em] text-slate-400 font-bold">Pending</span>
-          </div>
-        </div>
-      </div>
-
       <div className="absolute bottom-6 left-6 flex flex-col gap-2 z-[60]" onClick={e => e.stopPropagation()}>
         <button 
           onClick={() => handleFitToView(true)} 
@@ -263,10 +304,10 @@ const TestWorkflow: React.FC<TestWorkflowProps> = ({
           <span className="material-symbols-outlined">center_focus_weak</span>
         </button>
         <div className="h-px bg-white/10 w-8 mx-auto my-1"></div>
-        <button onMouseDown={(e) => e.stopPropagation()} onClick={() => setZoom(z => Math.min(z + 0.1, 2))} className="size-11 bg-background-dark/90 border border-white/10 rounded-lg flex items-center justify-center hover:bg-slate-800 text-slate-400 shadow-xl transition-all">
+        <button onMouseDown={(e) => e.stopPropagation()} onClick={() => setZoom(z => Math.min(z + 0.1, 3))} className="size-11 bg-background-dark/90 border border-white/10 rounded-lg flex items-center justify-center hover:bg-slate-800 text-slate-400 shadow-xl transition-all">
           <span className="material-symbols-outlined">add</span>
         </button>
-        <button onMouseDown={(e) => e.stopPropagation()} onClick={() => setZoom(z => Math.max(z - 0.1, 0.2))} className="size-11 bg-background-dark/90 border border-white/10 rounded-lg flex items-center justify-center hover:bg-slate-800 text-slate-400 shadow-xl transition-all">
+        <button onMouseDown={(e) => e.stopPropagation()} onClick={() => setZoom(z => Math.max(z - 0.1, 0.1))} className="size-11 bg-background-dark/90 border border-white/10 rounded-lg flex items-center justify-center hover:bg-slate-800 text-slate-400 shadow-xl transition-all">
           <span className="material-symbols-outlined">remove</span>
         </button>
       </div>
@@ -303,7 +344,7 @@ const TestWorkflow: React.FC<TestWorkflowProps> = ({
                   <polygon points="0 0, 10 3.5, 0 7" fill="#cbd5e1" />
                 </marker>
                 <marker id="arrowhead-primary" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                  <polygon points="0 0, 10 3.5, 0 7" fill="#cbd5e1" />
+                  <polygon points="0 0, 10 3.5, 0 7" fill="#00c0ca" />
                 </marker>
                 <marker id="arrowhead-selected" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
                   <polygon points="0 0, 10 3.5, 0 7" fill="#a78bfa" />
@@ -313,42 +354,80 @@ const TestWorkflow: React.FC<TestWorkflowProps> = ({
               {/* Subsystem to Begin lines */}
               {subsystems.map((sub, idx) => {
                 const subY = subStartY + idx * (TERMINAL_SIZE + 100) + TERMINAL_SIZE / 2;
-                const startX = subsystemsX + TERMINAL_SIZE;
-                const endXPos = beginX;
+                const startX = subsystemsX + TERMINAL_SIZE + LINE_GAP;
+                const endXPos = beginX - LINE_GAP;
                 const endYPos = VIEWPORT_CENTER;
                 return (
                   <path 
                     key={`sub-line-${sub.id}`}
-                    d={`M ${startX} ${subY} C ${startX + 100} ${subY}, ${endXPos - 100} ${endYPos}, ${endXPos} ${endYPos}`}
-                    className="fill-none stroke-slate-300 stroke-[2px] opacity-80"
+                    d={`M ${startX} ${subY} C ${startX + 50} ${subY}, ${endXPos - 50} ${endYPos}, ${endXPos} ${endYPos}`}
+                    className="fill-none stroke-primary/30 stroke-[2px]"
                     markerEnd="url(#arrowhead-primary)"
                   />
                 );
               })}
 
-              {/* Begin to Assets lines */}
-              {assets.map((asset, idx) => {
+              {/* Begin to Rank-0 Assets lines */}
+              {positionedAssets.filter(a => a.rank === 0).map(asset => {
+                const startX = beginX + TERMINAL_SIZE + LINE_GAP;
+                const endXPos = asset.x - LINE_GAP;
+                const startYPos = VIEWPORT_CENTER;
+                const endYPos = asset.y + ASSET_CARD_HEIGHT / 2;
+                return (
+                  <path 
+                    key={`begin-to-${asset.id}`}
+                    d={`M ${startX} ${startYPos} C ${startX + 50} ${startYPos}, ${endXPos - 50} ${endYPos}, ${endXPos} ${endYPos}`}
+                    className="fill-none stroke-slate-300 stroke-[1.5px] opacity-50"
+                    markerEnd="url(#arrowhead)"
+                  />
+                );
+              })}
+
+              {/* Asset to Asset dependency lines */}
+              {positionedAssets.map(asset => {
                 const isSelected = selectedAssetId === asset.id;
-                const assetY = startY + idx * (ASSET_CARD_HEIGHT + VERTICAL_GAP) + ASSET_CARD_HEIGHT / 2;
-                const beginTerminalX = beginX + TERMINAL_SIZE;
-                const beginTerminalY = VIEWPORT_CENTER;
-                const endTerminalX = endX;
-                const endTerminalY = VIEWPORT_CENTER;
+                return (asset.dependsOn || []).map(pId => {
+                  const predecessor = positionedAssets.find(pa => pa.id === pId);
+                  if (!predecessor) return null;
+                  
+                  const startX = predecessor.x + ASSET_CARD_WIDTH + LINE_GAP;
+                  const startYPos = predecessor.y + ASSET_CARD_HEIGHT / 2;
+                  const endXPos = asset.x - LINE_GAP;
+                  const endYPos = asset.y + ASSET_CARD_HEIGHT / 2;
+                  const isPreSelected = selectedAssetId === predecessor.id;
+
+                  return (
+                    <path 
+                      key={`${pId}-to-${asset.id}`}
+                      d={`M ${startX} ${startYPos} C ${startX + 50} ${startYPos}, ${endXPos - 50} ${endYPos}, ${endXPos} ${endYPos}`}
+                      className={`fill-none transition-all duration-500 ${
+                        isSelected || isPreSelected ? 'stroke-violet-400 stroke-[2.5] opacity-100' : 'stroke-slate-300 stroke-[1.5px] opacity-40'
+                      }`}
+                      markerEnd={isSelected || isPreSelected ? 'url(#arrowhead-selected)' : 'url(#arrowhead)'}
+                    />
+                  );
+                });
+              })}
+
+              {/* Terminal Col to End Terminal lines */}
+              {positionedAssets.filter(asset => {
+                return !positionedAssets.some(other => other.dependsOn?.includes(asset.id));
+              }).map(asset => {
+                const isSelected = selectedAssetId === asset.id;
+                const startX = asset.x + ASSET_CARD_WIDTH + LINE_GAP;
+                const startYPos = asset.y + ASSET_CARD_HEIGHT / 2;
+                const endXPos = endX - LINE_GAP;
+                const endYPos = VIEWPORT_CENTER;
 
                 return (
-                  <g key={`lines-${asset.id}`}>
-                    <path 
-                      d={`M ${beginTerminalX} ${beginTerminalY} C ${beginTerminalX + 100} ${beginTerminalY}, ${assetsX - 100} ${assetY}, ${assetsX} ${assetY}`}
-                      className={`fill-none transition-all duration-500 ${isSelected ? 'stroke-violet-400 stroke-[3] opacity-100' : 'stroke-slate-300 stroke-[1.5px] opacity-70'}`}
-                      strokeDasharray={isSelected ? '0' : '0'}
-                      markerEnd={isSelected ? 'url(#arrowhead-selected)' : 'url(#arrowhead-primary)'}
-                    />
-                    <path 
-                      d={`M ${assetsX + ASSET_CARD_WIDTH} ${assetY} C ${assetsX + ASSET_CARD_WIDTH + 100} ${assetY}, ${endTerminalX - 100} ${endTerminalY}, ${endTerminalX} ${endTerminalY}`}
-                      className={`fill-none transition-all duration-500 ${isSelected ? 'stroke-violet-400/50 stroke-[2.5] opacity-100' : 'stroke-slate-300 stroke-[1.5px] opacity-50'}`}
-                      markerEnd={isSelected ? 'url(#arrowhead-selected)' : 'url(#arrowhead)'}
-                    />
-                  </g>
+                  <path 
+                    key={`${asset.id}-to-end`}
+                    d={`M ${startX} ${startYPos} C ${startX + 50} ${startYPos}, ${endXPos - 50} ${endYPos}, ${endXPos} ${endYPos}`}
+                    className={`fill-none transition-all duration-500 ${
+                      isSelected ? 'stroke-violet-400 stroke-[2.5] opacity-100' : 'stroke-slate-300 stroke-[1.5px] opacity-40'
+                    }`}
+                    markerEnd={isSelected ? 'url(#arrowhead-selected)' : 'url(#arrowhead)'}
+                  />
                 );
               })}
             </svg>
@@ -359,17 +438,22 @@ const TestWorkflow: React.FC<TestWorkflowProps> = ({
               return (
                 <div 
                   key={`sub-terminal-${sub.id}`}
-                  className="absolute flex flex-col items-center gap-4 group" 
+                  className="absolute flex flex-col items-center gap-4 group cursor-pointer w-[120px] overflow-visible" 
                   style={{ left: subsystemsX, top: subY }}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onNavigateToSubsystem) onNavigateToSubsystem(sub);
+                  }}
                 >
-                  <div className="size-[120px] rounded-full border-4 border-primary/40 bg-primary/5 flex items-center justify-center shadow-[0_0_30px_rgba(0,192,202,0.1)] group-hover:scale-105 transition-transform">
+                  <div className="size-[120px] shrink-0 rounded-full border-4 border-primary/40 bg-primary/5 flex items-center justify-center shadow-[0_0_30px_rgba(0,192,202,0.1)] group-hover:scale-105 transition-transform">
                     <span className="material-symbols-outlined text-5xl text-primary font-bold">login</span>
                   </div>
-                  <div className="text-center">
+                  <div className="text-center w-max">
                     <p className="text-sm font-bold text-white uppercase tracking-widest leading-tight">
                       Subsystem Testing Complete:
                       <br />
-                      <span className="text-[11px] font-medium text-slate-500 mt-2 uppercase tracking-wide block">
+                      <span className="text-[13px] font-bold text-primary mt-2 uppercase tracking-wide block">
                         {sub.name}
                       </span>
                     </p>
@@ -380,13 +464,13 @@ const TestWorkflow: React.FC<TestWorkflowProps> = ({
 
             {/* Begin Terminal */}
             <div 
-              className="absolute flex flex-col items-center gap-4 group" 
+              className="absolute flex flex-col items-center gap-4 group w-[120px] overflow-visible" 
               style={{ left: beginX, top: VIEWPORT_CENTER - TERMINAL_SIZE / 2 }}
             >
-              <div className="size-[120px] rounded-full border-4 border-primary/40 bg-primary/5 flex items-center justify-center shadow-[0_0_50px_rgba(0,192,202,0.15)] group-hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-5xl text-primary font-bold">login</span>
+              <div className="size-[120px] shrink-0 rounded-full border-4 border-primary/40 bg-primary/5 flex items-center justify-center shadow-[0_0_50px_rgba(0,192,202,0.15)] group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-5xl text-primary font-bold">arrow_forward</span>
               </div>
-              <div className="text-center">
+              <div className="text-center w-max">
                 <p className="text-xl font-bold text-white uppercase tracking-widest leading-tight">
                   Begin<br />System Testing
                 </p>
@@ -394,7 +478,7 @@ const TestWorkflow: React.FC<TestWorkflowProps> = ({
             </div>
 
             {/* Asset Cards */}
-            {assets.length === 0 ? (
+            {positionedAssets.length === 0 ? (
                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="text-center space-y-4">
                     <span className="material-symbols-outlined text-6xl text-slate-800">playlist_remove</span>
@@ -402,7 +486,7 @@ const TestWorkflow: React.FC<TestWorkflowProps> = ({
                   </div>
                </div>
             ) : (
-              assets.map((asset, idx) => {
+              positionedAssets.map((asset) => {
                 const isSelected = selectedAssetId === asset.id;
                 return (
                   <div 
@@ -417,14 +501,23 @@ const TestWorkflow: React.FC<TestWorkflowProps> = ({
                         ? 'border-violet-400 shadow-[0_0_40px_rgba(167,139,250,0.25)] z-40 scale-[1.05]' 
                         : 'border-white/5 hover:border-violet-400/40'
                     }`}
-                    style={{ left: assetsX, top: startY + idx * (ASSET_CARD_HEIGHT + VERTICAL_GAP) }}
+                    style={{ left: asset.x, top: asset.y }}
                   >
                     <div className={`px-4 py-2 border-b flex items-center justify-between ${isSelected ? 'bg-violet-400/10 border-violet-400/20' : 'bg-white/5 border-white/5'}`}>
-                      <span className={`text-[10px] font-mono font-bold ${isSelected ? 'text-violet-300' : 'text-slate-500'}`}>{asset.id}</span>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[10px] font-mono font-bold ${isSelected ? 'text-violet-300' : 'text-slate-500'}`}>{asset.id}</span>
+                        {asset.dependsOn && asset.dependsOn.length > 0 && (
+                          <div className="flex gap-1">
+                            {asset.dependsOn.map(p => (
+                              <div key={p} className="size-1.5 rounded-full bg-violet-400/50" title={`Following ${p}`} />
+                            ))}
+                          </div>
+                        )}
+                      </div>
                       <div className={`size-2 rounded-full ${getStatusBg(asset.status)}`}></div>
                     </div>
                     <div className="p-5">
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center justify-between">
                         <h4 className={`font-bold text-base truncate transition-colors ${isSelected ? 'text-violet-100' : 'text-white group-hover:text-violet-400'}`}>
                           {asset.name}
                         </h4>
@@ -432,9 +525,6 @@ const TestWorkflow: React.FC<TestWorkflowProps> = ({
                           {getStatusIcon(asset.status)}
                         </span>
                       </div>
-                      <p className={`text-xs line-clamp-2 leading-relaxed h-8 transition-colors ${isSelected ? 'text-slate-300' : 'text-slate-500'}`}>
-                        {asset.description}
-                      </p>
                     </div>
                     
                     <div className={`px-4 py-3 flex items-center justify-between transition-all ${
@@ -462,7 +552,7 @@ const TestWorkflow: React.FC<TestWorkflowProps> = ({
 
             {/* End Terminal */}
             <div 
-              className={`absolute flex flex-col items-center gap-4 group ${onNavigateToParent ? 'cursor-pointer' : ''}`} 
+              className={`absolute flex flex-col items-center gap-4 group w-[120px] overflow-visible ${onNavigateToParent ? 'cursor-pointer' : ''}`} 
               style={{ left: endX, top: VIEWPORT_CENTER - TERMINAL_SIZE / 2 }}
               onMouseDown={(e) => e.stopPropagation()}
               onClick={(e) => {
@@ -470,33 +560,24 @@ const TestWorkflow: React.FC<TestWorkflowProps> = ({
                 if (onNavigateToParent) onNavigateToParent();
               }}
             >
-              <div className={`size-[120px] rounded-full border-4 bg-primary/5 flex items-center justify-center transition-all border-primary/40 shadow-[0_0_50px_rgba(0,192,202,0.15)] group-hover:scale-110 group-hover:shadow-[0_0_60px_rgba(0,192,202,0.25)]`}>
+              <div className={`size-[120px] shrink-0 rounded-full border-4 bg-primary/5 flex items-center justify-center transition-all border-primary/40 shadow-[0_0_50px_rgba(0,192,202,0.15)] group-hover:scale-110 group-hover:shadow-[0_0_60px_rgba(0,192,202,0.25)]`}>
                 <span className="material-symbols-outlined text-5xl font-bold text-primary">
-                  {onNavigateToParent ? 'arrow_upward' : 'logout'}
+                  logout
                 </span>
               </div>
-              <div className="text-center">
-                <p className="text-xl font-bold text-white uppercase tracking-widest leading-tight group-hover:text-primary transition-colors">
-                  System Testing<br />Complete
+              <div className="text-center w-max">
+                <p className="text-sm font-bold text-white uppercase tracking-widest leading-tight group-hover:text-primary transition-colors">
+                  System Testing Complete:
+                  <br />
+                  <span className="text-[13px] font-bold text-primary mt-2 uppercase tracking-wide block">
+                    {system.name}
+                  </span>
                 </p>
-                {onNavigateToParent && (
-                  <p className="text-[9px] font-bold text-primary/60 uppercase tracking-widest mt-2 group-hover:text-primary">Go to Parent System</p>
-                )}
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      <style>{`
-        .dash-anim {
-          animation: dashoffset 1.5s linear infinite;
-        }
-        @keyframes dashoffset {
-          from { stroke-dashoffset: 12; }
-          to { stroke-dashoffset: 0; }
-        }
-      `}</style>
     </div>
   );
 };

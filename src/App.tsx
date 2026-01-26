@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { SystemNode, ReadinessStatus, RollupItem, TestAsset, Workspace } from './types';
 import { INITIAL_WORKSPACES } from './data/mockSystems';
@@ -85,6 +84,7 @@ const App: React.FC = () => {
         id: `SYS-${id.slice(-3)}`,
         name: `${name} Root`,
         owner: 'Default Owner',
+        productEngineerRE: 'Default Owner',
         status: ReadinessStatus.NOT_MADE,
         imageUrl: `https://picsum.photos/seed/${id}/600/400`,
         testAssets: [],
@@ -124,7 +124,6 @@ const App: React.FC = () => {
   const performSearch = useCallback(() => {
     const query = searchQuery.toLowerCase();
     
-    // Categorize active filters
     const typeFilters = new Set<FilterType>();
     const statusFilters = new Set<FilterType>();
     
@@ -147,7 +146,6 @@ const App: React.FC = () => {
       const computedStatus = getComputedNodeStatus(node);
       const nodeNoAssets = node.testAssets.length === 0;
       
-      // Node (System) check
       let nodeMatchesType = !hasTypeFilters || typeFilters.has('SYSTEM');
       let nodeMatchesStatus = !hasStatusFilters || 
         statusFilters.has(computedStatus as unknown as FilterType) || 
@@ -160,7 +158,6 @@ const App: React.FC = () => {
         results.push({ type: 'system', system: node });
       }
 
-      // Assets check
       node.testAssets.forEach(asset => {
         let assetMatchesType = !hasTypeFilters || typeFilters.has('ASSET');
         let assetMatchesStatus = !hasStatusFilters || statusFilters.has(asset.status as unknown as FilterType);
@@ -371,7 +368,7 @@ const App: React.FC = () => {
               >
                 Test Workflow
                 {activeTab === 'workflow' && (
-                  <div className="absolute bottom-[-13px] left-0 right-0 h-0.5 bg-primary shadow-[0_0_8px_#00c0ca]"></div>
+                  <div className="absolute bottom-[-13px] left-0 right-0 h-0.5 bg-violet-500 shadow-[0_0_8px_rgba(167,139,250,0.6)]"></div>
                 )}
               </button>
             </div>
@@ -432,20 +429,28 @@ const App: React.FC = () => {
                       {[
                         { id: 'SYSTEM', label: 'Systems', icon: 'hub' },
                         { id: 'ASSET', label: 'Assets', icon: 'biotech' },
-                      ].map(f => (
-                        <button 
-                          key={f.id}
-                          onClick={() => handleToggleFilter(f.id as FilterType)}
-                          className={`flex flex-col items-center gap-1.5 p-2 rounded border transition-all ${
-                            activeFilters.has(f.id as FilterType) 
-                            ? 'bg-primary/10 border-primary/40 text-white' 
-                            : 'bg-white/5 border-transparent text-slate-400 hover:bg-white/10 hover:text-slate-200'
-                          }`}
-                        >
-                          <span className="material-symbols-outlined text-xl">{f.icon}</span>
-                          <span className="text-[10px] font-bold uppercase tracking-tighter">{f.label}</span>
-                        </button>
-                      ))}
+                      ].map(f => {
+                        const isActive = activeFilters.has(f.id as FilterType);
+                        let activeStyles = '';
+                        if (isActive) {
+                          activeStyles = f.id === 'ASSET' 
+                            ? 'bg-violet-500/20 border-violet-400 text-violet-300' 
+                            : 'bg-primary/10 border-primary/40 text-white';
+                        } else {
+                          activeStyles = 'bg-white/5 border-transparent text-slate-400 hover:bg-white/10 hover:text-slate-200';
+                        }
+
+                        return (
+                          <button 
+                            key={f.id}
+                            onClick={() => handleToggleFilter(f.id as FilterType)}
+                            className={`flex flex-col items-center gap-1.5 p-2 rounded border transition-all ${activeStyles}`}
+                          >
+                            <span className="material-symbols-outlined text-xl">{f.icon}</span>
+                            <span className="text-[10px] font-bold uppercase tracking-tighter">{f.label}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -542,12 +547,13 @@ const App: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 border-l border-white/10 pl-4">
-            <button className="p-2 text-slate-400 hover:text-white transition-colors">
-              <span className="material-symbols-outlined">notifications</span>
+            <button 
+              onClick={() => window.location.reload()}
+              className="p-2 text-slate-400 hover:text-white transition-colors group"
+              title="Reload Dashboard"
+            >
+              <span className="material-symbols-outlined text-xl group-active:rotate-180 transition-transform">refresh</span>
             </button>
-            <div className="size-8 rounded-full bg-slate-700 border border-primary/50 overflow-hidden">
-               <img src="https://picsum.photos/seed/user/100" alt="Avatar" />
-            </div>
           </div>
         </div>
       </header>
@@ -579,6 +585,10 @@ const App: React.FC = () => {
               selectedAssetId={selectedAsset?.id || null}
               onSelectAsset={(asset) => handleSelectAsset(asset, selectedSystem)}
               onNavigateToParent={hasParent ? handleNavigateToParent : undefined}
+              onNavigateToSubsystem={(sub) => {
+                setSelectedSystem(sub);
+                setSelectedAsset(null);
+              }}
             />
             <AssetSidebar 
               selectedAsset={selectedAsset}

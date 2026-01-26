@@ -1,4 +1,3 @@
-
 export enum ReadinessStatus {
   AVAILABLE = 'AVAILABLE',
   IN_PROGRESS = 'IN_PROGRESS',
@@ -11,12 +10,15 @@ export interface TestAsset {
   name: string;
   status: ReadinessStatus;
   description: string;
+  testEngineerRE: string; // Responsible Engineer for the test
+  dependsOn?: string[]; // IDs of test assets that must be completed before this one
 }
 
 export interface SystemNode {
   id: string;
   name: string;
   owner: string;
+  productEngineerRE: string; // Responsible Engineer for the product
   status: ReadinessStatus;
   imageUrl: string;
   subsystems?: SystemNode[];
