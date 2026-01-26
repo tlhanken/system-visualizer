@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useMemo } from 'react';
 import { SystemNode, RollupItem, ReadinessStatus, TestAsset } from '../types';
 import { getComputedNodeStatus } from './GraphCanvas';
 
@@ -30,12 +29,48 @@ const Sidebar: React.FC<SidebarProps> = ({ selectedSystem, rollupData, onSelectA
     }
   };
 
+  const getStatusIcon = (status: ReadinessStatus) => {
+    switch (status) {
+      case ReadinessStatus.AVAILABLE: return 'check_circle';
+      case ReadinessStatus.IN_PROGRESS: return 'radio_button_checked';
+      case ReadinessStatus.NOT_MADE: return 'error_outline';
+      case ReadinessStatus.DEFERRED: return 'block';
+      default: return 'help';
+    }
+  };
+
   const formatStatusLabel = (status: string) => {
     if (status === ReadinessStatus.NOT_MADE) return 'PENDING';
     return status.replace(/_/g, ' ');
   };
 
   const computedSystemStatus = getComputedNodeStatus(selectedSystem);
+
+  const localAssetCounts = useMemo(() => {
+    const counts = {
+      [ReadinessStatus.AVAILABLE]: 0,
+      [ReadinessStatus.IN_PROGRESS]: 0,
+      [ReadinessStatus.NOT_MADE]: 0,
+      [ReadinessStatus.DEFERRED]: 0,
+    };
+    selectedSystem.testAssets.forEach(a => {
+      counts[a.status]++;
+    });
+    return counts;
+  }, [selectedSystem.testAssets]);
+
+  const rollupAssetCounts = useMemo(() => {
+    const counts = {
+      [ReadinessStatus.AVAILABLE]: 0,
+      [ReadinessStatus.IN_PROGRESS]: 0,
+      [ReadinessStatus.NOT_MADE]: 0,
+      [ReadinessStatus.DEFERRED]: 0,
+    };
+    rollupData.forEach(item => {
+      counts[item.asset.status]++;
+    });
+    return counts;
+  }, [rollupData]);
 
   const groupedRollup = rollupData.reduce((acc, item) => {
     if (!acc[item.asset.status]) acc[item.asset.status] = [];
@@ -71,6 +106,20 @@ const Sidebar: React.FC<SidebarProps> = ({ selectedSystem, rollupData, onSelectA
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 to-transparent"></div>
         </div>
+
+        {/* Responsible Engineers People Section */}
+        <div className="mt-4 pt-4 border-t border-white/5 bg-white/[0.02] p-3 rounded">
+          <h3 className="text-[10px] font-bold text-slate-200 uppercase tracking-widest mb-3 flex items-center gap-2">
+            <span className="material-symbols-outlined text-sm text-blue-500 font-bold">person</span>
+            People
+          </h3>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-slate-400">Product Engineer RE</span>
+              <span className="text-white font-medium">{selectedSystem.productEngineerRE}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar">
@@ -80,7 +129,15 @@ const Sidebar: React.FC<SidebarProps> = ({ selectedSystem, rollupData, onSelectA
               <span className="material-symbols-outlined text-violet-400 text-sm">biotech</span>
               <h3 className="text-slate-200 text-[11px] font-bold tracking-widest uppercase">Local Test Assets</h3>
             </div>
-            <button className="text-primary text-[10px] font-bold hover:underline">UPDATE ALL</button>
+            <div className="flex items-center gap-1 font-mono text-[10px] font-bold">
+              <span className="text-status-available" title="Available">{localAssetCounts[ReadinessStatus.AVAILABLE]}</span>
+              <span className="text-slate-600">/</span>
+              <span className="text-status-progress" title="In Progress">{localAssetCounts[ReadinessStatus.IN_PROGRESS]}</span>
+              <span className="text-slate-600">/</span>
+              <span className="text-status-notmade" title="Pending">{localAssetCounts[ReadinessStatus.NOT_MADE]}</span>
+              <span className="text-slate-600">/</span>
+              <span className="text-status-deferred" title="Deferred">{localAssetCounts[ReadinessStatus.DEFERRED]}</span>
+            </div>
           </div>
           <div className="space-y-3">
             {selectedSystem.testAssets.length === 0 && (
@@ -95,9 +152,7 @@ const Sidebar: React.FC<SidebarProps> = ({ selectedSystem, rollupData, onSelectA
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-3">
                     <span className={`material-symbols-outlined ${getStatusColor(asset.status)} text-lg mt-0.5 group-hover:scale-110 transition-transform`}>
-                      {asset.status === ReadinessStatus.AVAILABLE ? 'check_circle' : 
-                       asset.status === ReadinessStatus.IN_PROGRESS ? 'pending' : 
-                       asset.status === ReadinessStatus.DEFERRED ? 'block' : 'report_problem'}
+                      {getStatusIcon(asset.status)}
                     </span>
                     <div>
                       <p className="text-sm font-medium text-slate-200 group-hover:text-primary transition-colors">{asset.name}</p>
@@ -116,9 +171,20 @@ const Sidebar: React.FC<SidebarProps> = ({ selectedSystem, rollupData, onSelectA
         </section>
 
         <section className="p-6 bg-slate-900/10">
-          <div className="flex items-center gap-2 mb-6">
-            <span className="material-symbols-outlined text-violet-400 text-sm">account_tree</span>
-            <h3 className="text-slate-200 text-[11px] font-bold tracking-widest uppercase font-display">Subsystem Test Asset Rollup</h3>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-violet-400 text-sm">account_tree</span>
+              <h3 className="text-slate-200 text-[11px] font-bold tracking-widest uppercase font-display">Subsystem Test Asset Rollup</h3>
+            </div>
+            <div className="flex items-center gap-1 font-mono text-[10px] font-bold">
+              <span className="text-status-available" title="Available Rollup">{rollupAssetCounts[ReadinessStatus.AVAILABLE]}</span>
+              <span className="text-slate-600">/</span>
+              <span className="text-status-progress" title="In Progress Rollup">{rollupAssetCounts[ReadinessStatus.IN_PROGRESS]}</span>
+              <span className="text-slate-600">/</span>
+              <span className="text-status-notmade" title="Pending Rollup">{rollupAssetCounts[ReadinessStatus.NOT_MADE]}</span>
+              <span className="text-slate-600">/</span>
+              <span className="text-status-deferred" title="Deferred Rollup">{rollupAssetCounts[ReadinessStatus.DEFERRED]}</span>
+            </div>
           </div>
           
           <div className="space-y-6">
@@ -132,8 +198,27 @@ const Sidebar: React.FC<SidebarProps> = ({ selectedSystem, rollupData, onSelectA
                     <div 
                       key={`${item.asset.id}-${idx}`} 
                       onClick={() => onSelectAsset?.(item.asset, item.system)}
-                      className="flex items-center justify-between text-xs p-2.5 bg-slate-900/30 border border-white/5 rounded cursor-pointer hover:border-primary/40 hover:bg-slate-800/60 transition-all group"
+                      className="relative flex items-center justify-between text-xs p-2.5 bg-slate-900/30 border border-white/5 rounded cursor-pointer hover:border-primary/40 hover:bg-slate-800/60 transition-all group"
                     >
+                      {/* Stylized Tooltip Pop-up */}
+                      <div className="absolute bottom-[calc(100%+8px)] left-4 right-4 bg-background-dark border border-primary/30 rounded p-5 shadow-2xl opacity-0 scale-95 translate-y-2 group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 pointer-events-none transition-all duration-300 z-[110] backdrop-blur-xl">
+                        <div className="flex flex-col gap-2">
+                          <div className="flex flex-col gap-1.5">
+                            <span className="text-sm text-slate-400 font-bold leading-tight uppercase tracking-tight">{item.system.name}</span>
+                            <span className="text-xl text-white font-bold leading-tight flex items-center gap-2">
+                              <span className="material-symbols-outlined text-base text-violet-400">subdirectory_arrow_right</span>
+                              {item.asset.name}
+                            </span>
+                          </div>
+                          {item.asset.description && (
+                            <p className="mt-2 text-sm text-slate-500 leading-relaxed italic line-clamp-4 border-t border-white/5 pt-2">
+                              {item.asset.description}
+                            </p>
+                          )}
+                        </div>
+                        <div className="absolute top-full left-6 w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[10px] border-t-primary/30"></div>
+                      </div>
+
                       <div className="flex items-center gap-2 overflow-hidden">
                         <div className={`size-2 shrink-0 rounded-full ${getStatusBg(status)}`}></div>
                         <span className="text-slate-200 font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px] group-hover:text-primary transition-colors">

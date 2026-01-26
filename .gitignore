@@ -1,0 +1,15 @@
+# Environment
+.direnv
+.env.local
+
+# Node
+node_modules
+src/node_modules
+dist
+src/dist
+
+# Nix
+result
+
+# OS
+.DS_Store

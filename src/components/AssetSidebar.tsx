@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { TestAsset, ReadinessStatus, SystemNode } from '../types';
 
@@ -26,6 +25,16 @@ const AssetSidebar: React.FC<AssetSidebarProps> = ({ selectedAsset, system, onSe
       case ReadinessStatus.NOT_MADE: return 'bg-status-notmade';
       case ReadinessStatus.DEFERRED: return 'bg-status-deferred';
       default: return 'bg-slate-400';
+    }
+  };
+
+  const getStatusIcon = (status: ReadinessStatus) => {
+    switch (status) {
+      case ReadinessStatus.AVAILABLE: return 'check_circle';
+      case ReadinessStatus.IN_PROGRESS: return 'radio_button_checked';
+      case ReadinessStatus.NOT_MADE: return 'error_outline';
+      case ReadinessStatus.DEFERRED: return 'block';
+      default: return 'help';
     }
   };
 
@@ -89,6 +98,26 @@ const AssetSidebar: React.FC<AssetSidebarProps> = ({ selectedAsset, system, onSe
              </button>
           )}
         </div>
+
+        {/* Responsible Engineers People Section */}
+        <div className="mt-4 pt-4 border-t border-white/5 bg-white/[0.02] p-3 rounded">
+          <h3 className="text-[10px] font-bold text-slate-200 uppercase tracking-widest mb-3 flex items-center gap-2">
+            <span className="material-symbols-outlined text-sm text-blue-500 font-bold">person</span>
+            People
+          </h3>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-slate-400">Product RE</span>
+              <span className="text-white font-medium">{system.productEngineerRE}</span>
+            </div>
+            {selectedAsset && (
+              <div className="flex items-center justify-between text-xs pt-1 border-t border-white/5 mt-1">
+                <span className="text-slate-400">Test RE</span>
+                <span className="text-white font-medium">{selectedAsset.testEngineerRE}</span>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar">
@@ -98,7 +127,7 @@ const AssetSidebar: React.FC<AssetSidebarProps> = ({ selectedAsset, system, onSe
             <div className="p-6 border-b border-white/10 bg-slate-900/10">
               <div className="flex items-center gap-2 mb-3">
                 <span className="material-symbols-outlined text-violet-400 text-sm">description</span>
-                <h3 className="text-slate-200 text-[11px] font-bold tracking-widest uppercase">Functional Specs</h3>
+                <h3 className="text-slate-200 text-[11px] font-bold tracking-widest uppercase">Asset Description</h3>
               </div>
               <p className="text-sm text-slate-300 leading-relaxed bg-slate-950/40 p-4 rounded border border-white/5 italic">
                 "{selectedAsset.description}"
@@ -108,7 +137,7 @@ const AssetSidebar: React.FC<AssetSidebarProps> = ({ selectedAsset, system, onSe
             <div className="p-6">
               <div className="flex items-center gap-2 mb-4">
                 <span className="material-symbols-outlined text-primary text-sm">hub</span>
-                <h3 className="text-slate-200 text-[11px] font-bold tracking-widest uppercase">Integration Context</h3>
+                <h3 className="text-slate-200 text-[11px] font-bold tracking-widest uppercase">System Context</h3>
               </div>
               
               <div className="space-y-3">
@@ -121,7 +150,7 @@ const AssetSidebar: React.FC<AssetSidebarProps> = ({ selectedAsset, system, onSe
                  </div>
                  <div className="flex items-center justify-between text-xs p-3 bg-slate-900/30 border border-white/5 rounded">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">Lead Owner</span>
+                      <span className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">Product RE</span>
                       <span className="text-slate-200 font-medium">{system.owner}</span>
                     </div>
                     <span className="material-symbols-outlined text-sm text-slate-500">person</span>
@@ -139,7 +168,7 @@ const AssetSidebar: React.FC<AssetSidebarProps> = ({ selectedAsset, system, onSe
           <section className="p-6 space-y-6">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <span className="material-symbols-outlined text-primary text-sm">precision_manufacturing</span>
+                <span className="material-symbols-outlined text-violet-400 text-sm">biotech</span>
                 <h3 className="text-slate-200 text-[11px] font-bold tracking-widest uppercase">System Test Assets</h3>
               </div>
               <div className="space-y-3">
@@ -152,7 +181,7 @@ const AssetSidebar: React.FC<AssetSidebarProps> = ({ selectedAsset, system, onSe
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3">
                         <span className={`material-symbols-outlined ${getStatusColor(asset.status)} text-lg mt-0.5 group-hover:text-violet-400 transition-colors`}>
-                          {asset.status === ReadinessStatus.AVAILABLE ? 'check_circle' : 'pending'}
+                          {getStatusIcon(asset.status)}
                         </span>
                         <div>
                           <p className="text-sm font-medium text-slate-200 group-hover:text-white">{asset.name}</p>

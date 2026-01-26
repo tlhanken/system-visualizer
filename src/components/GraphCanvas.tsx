@@ -1,4 +1,3 @@
-
 import React, { useRef, useState, useEffect, useLayoutEffect } from 'react';
 import { SystemNode, ReadinessStatus, TestAsset } from '../types';
 
@@ -13,13 +12,13 @@ interface GraphCanvasProps {
   searchQuery: string;
 }
 
-const CANVAS_SIZE = 12000; // Increased canvas size for larger trees
-const ROOT_START_X = 8000; // Adjusted root position to right
+const CANVAS_SIZE = 12000; 
+const ROOT_START_X = 8000; 
 const ROOT_START_Y = 6000;
 const NODE_WIDTH = 240; 
 const NODE_HEIGHT = 160; 
-const HORIZONTAL_GAP = 480; // More horizontal space
-const VERTICAL_GAP = 280;   // More vertical space
+const HORIZONTAL_GAP = 480; 
+const VERTICAL_GAP = 280;   
 
 /**
  * Utility to compute the derived status of a node based on its local and recursive assets.
@@ -73,7 +72,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
   onCollapseAll,
   searchQuery
 }) => {
-  const [zoom, setZoom] = useState(0.8); // Start slightly zoomed out to see structure
+  const [zoom, setZoom] = useState(0.8); 
   const containerRef = useRef<HTMLDivElement>(null);
   const prevZoomRef = useRef<number>(zoom);
   
@@ -228,7 +227,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
           onClick={(e) => { e.stopPropagation(); onSelect(node); }}
           onMouseDown={(e) => e.stopPropagation()}
           className={`
-            relative w-60 bg-node-bg shadow-2xl overflow-visible rounded-sm cursor-pointer group transition-all duration-300
+            relative w-60 min-h-[160px] bg-node-bg shadow-2xl overflow-visible rounded-sm cursor-pointer group transition-all duration-300
             ${isPositiveStatus 
               ? `border-2 ${getStatusColor(computedStatus)}` 
               : `border border-white/10 border-r-4 ${getStatusColor(computedStatus)}`
@@ -297,10 +296,10 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
         // Prepare for the next sibling by skipping over the entire height of this subtree
         currentYOffset += subLeafCount * VERTICAL_GAP;
 
-        // Connector lines
-        const startX = x; 
+        // Connector lines math - extend start and end to penetrate nodes slightly to avoid visual gaps
+        const startX = x + 4; 
         const startY = y + NODE_HEIGHT / 2;
-        const endX = childX + NODE_WIDTH;
+        const endX = childX + NODE_WIDTH - 4;
         const endY = childY + NODE_HEIGHT / 2;
 
         const minX = Math.min(startX, endX);
@@ -326,6 +325,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
                 : "stroke-slate-300 stroke-[1.5px] opacity-70"
               }
               fill="none"
+              strokeLinecap="round"
               style={{ transition: 'stroke 0.3s ease, opacity 0.3s ease' }}
               d={`
                 M ${startX - minX} ${startY - minY} 
@@ -376,7 +376,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
           title="Focus Selected"
           className="size-11 bg-background-dark/90 border border-white/10 rounded-lg flex items-center justify-center hover:bg-slate-800 text-primary shadow-xl transition-all hover:scale-105 active:scale-95"
         >
-          <span className="material-symbols-outlined">filter_center_focus</span>
+          <span className="material-symbols-outlined">center_focus_weak</span>
         </button>
         <div className="h-px bg-white/10 w-8 mx-auto my-1"></div>
         <button onClick={() => setZoom(z => Math.min(z + 0.1, 3))} className="size-11 bg-background-dark/90 border border-white/10 rounded-lg flex items-center justify-center hover:bg-slate-800 text-slate-400 shadow-xl transition-all">
