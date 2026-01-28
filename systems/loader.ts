@@ -10,7 +10,7 @@ type SystemModule = {
 const createWorkspace = (system: SystemNode, index: number, source: 'Example' | 'Private'): Workspace => {
     return {
         id: `ws-${source.toLowerCase()}-${index}`,
-        name: `${source} - ${system.name}`,
+        name: source === 'Private' ? system.name : `${source} - ${system.name}`,
         rootNode: system
     };
 };

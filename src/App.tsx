@@ -15,6 +15,7 @@ interface SearchResult {
 
 type FilterType = ReadinessStatus | 'NO_ASSETS' | 'SYSTEM' | 'ASSET';
 type ViewTab = 'architecture' | 'workflow';
+type SortOption = 'alphabetical' | 'reverse' | 'recent';
 
 const App: React.FC = () => {
   const [workspaces, setWorkspaces] = useState<Workspace[]>(INITIAL_WORKSPACES);
@@ -22,6 +23,45 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ViewTab>('architecture');
   const [isWorkspaceDropdownOpen, setIsWorkspaceDropdownOpen] = useState(false);
   const workspaceRef = useRef<HTMLDivElement>(null);
+
+  const [sortOrder, setSortOrder] = useState<SortOption>(() => {
+    return (localStorage.getItem('workspace_sort_order') as SortOption) || 'recent';
+  });
+
+  const [lastAccessed, setLastAccessed] = useState<Record<string, number>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('workspace_access_log') || '{}');
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('workspace_sort_order', sortOrder);
+  }, [sortOrder]);
+
+  useEffect(() => {
+    const now = Date.now();
+    setLastAccessed(prev => {
+      const next = { ...prev, [activeWorkspaceId]: now };
+      localStorage.setItem('workspace_access_log', JSON.stringify(next));
+      return next;
+    });
+  }, [activeWorkspaceId]);
+
+  const sortedWorkspaces = useMemo(() => {
+    return [...workspaces].sort((a, b) => {
+      if (sortOrder === 'recent') {
+        const timeA = lastAccessed[a.id] || 0;
+        const timeB = lastAccessed[b.id] || 0;
+        return timeB - timeA; // Descending
+      }
+      if (sortOrder === 'reverse') {
+        return b.name.localeCompare(a.name);
+      }
+      return a.name.localeCompare(b.name);
+    });
+  }, [workspaces, sortOrder, lastAccessed]);
 
   const activeWorkspace = useMemo(() =>
     workspaces.find(ws => ws.id === activeWorkspaceId) || workspaces[0],
@@ -83,7 +123,6 @@ const App: React.FC = () => {
       rootNode: {
         id: `SYS-${id.slice(-3)}`,
         name: `${name} Root`,
-        owner: 'Default Owner',
         productEngineerRE: 'Default Owner',
         status: ReadinessStatus.NOT_MADE,
         imageUrl: `https://picsum.photos/seed/${id}/600/400`,
@@ -315,10 +354,33 @@ const App: React.FC = () => {
 
               {isWorkspaceDropdownOpen && (
                 <div className="absolute top-full left-0 mt-2 w-64 bg-background-dark/95 backdrop-blur-xl border border-white/10 rounded-lg shadow-2xl overflow-hidden py-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="px-3 py-1.5 mb-1">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Active Workspaces</span>
+                  <div className="flex items-center justify-between px-3 py-1.5 mb-1 border-b border-white/5">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Workspaces</span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setSortOrder('alphabetical'); }}
+                        className={`h-6 px-1.5 flex items-center justify-center rounded hover:bg-white/10 transition-colors ${sortOrder === 'alphabetical' ? 'text-primary' : 'text-slate-500'}`}
+                        title="A-Z"
+                      >
+                        <span className="text-[10px] font-bold">A-Z</span>
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setSortOrder('reverse'); }}
+                        className={`h-6 px-1.5 flex items-center justify-center rounded hover:bg-white/10 transition-colors ${sortOrder === 'reverse' ? 'text-primary' : 'text-slate-500'}`}
+                        title="Z-A"
+                      >
+                        <span className="text-[10px] font-bold">Z-A</span>
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setSortOrder('recent'); }}
+                        className={`h-6 px-1.5 flex items-center justify-center rounded hover:bg-white/10 transition-colors ${sortOrder === 'recent' ? 'text-primary' : 'text-slate-500'}`}
+                        title="Recent"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">schedule</span>
+                      </button>
+                    </div>
                   </div>
-                  {workspaces.map(ws => (
+                  {sortedWorkspaces.map(ws => (
                     <div
                       key={ws.id}
                       onClick={() => {

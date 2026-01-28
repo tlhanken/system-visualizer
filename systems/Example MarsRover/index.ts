@@ -3,7 +3,6 @@ import { ReadinessStatus, SystemNode } from '../../src/types';
 export const MARS_ROVER_HIERARCHY: SystemNode = {
     id: 'ROV-001',
     name: 'Mars Rover',
-    owner: 'Dr. Marcus Thorne',
     productEngineerRE: 'Marcus Thorne',
     status: ReadinessStatus.IN_PROGRESS,
     imageUrl: 'https://picsum.photos/seed/rover/600/400',
@@ -20,7 +19,6 @@ export const MARS_ROVER_HIERARCHY: SystemNode = {
         {
             id: 'MCU-001',
             name: 'Main Control Unit',
-            owner: 'Sarah Chen',
             productEngineerRE: 'Sarah Chen',
             status: ReadinessStatus.AVAILABLE,
             imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCtRhryxS0ib9wEYfnYK4FgvoyLoGBNcbnVf_3-jEv-pBo1G_ClIr8BakKMv9NyJmPuqBSr02OcUjt2WbhSA0EO_2vSSIsbww345VYoNvfCFQ6Dsuax25a_Tm2ymftzgkYZM-ytuQHTo-UxuA4zGoBP_f-IBLjeFGxmsUV0bb36MjvzjmAeLEGZ9EXQD3Q-21ZLr1uN1OcKXIGKaSoH_enRcOI63nLxbs5fqA89a-Fhld-CzhV-eFGIL6_TzPo3tq-irPPB_hgRhvk',
@@ -37,7 +35,6 @@ export const MARS_ROVER_HIERARCHY: SystemNode = {
                 {
                     id: 'AUX-012',
                     name: 'Auxiliary Battery Unit',
-                    owner: 'Dr. Elena Volkov',
                     productEngineerRE: 'Elena Volkov',
                     status: ReadinessStatus.IN_PROGRESS,
                     imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA6E-sYJ2j72HuPEF4eI3aZzok1TrkI-kiJ8WRKVz_4pOjKWGuZYGaQfdJkpNHu1eivCiDFtxGAPfw3OrOPUfwQ_aimGGz53R76BwwCVzUgaxz7ssVQC2R1UBlyfQFuJsoS2Clf3fD4eWbQAJuibPL4c2Wf9ihe5dgFG-97WraTas37_XkHOOxX6LjyRzYe-L5zTkak713p6BywXSLRF0WnXMK_WKV8KZUfLv0l1MQ2kryhTI44in896p7zIdvrroWiDiyaCGCMcyk',
@@ -85,7 +82,6 @@ export const MARS_ROVER_HIERARCHY: SystemNode = {
                         {
                             id: 'SSR-882',
                             name: 'Solid State Relay Matrix',
-                            owner: 'Dr. Elena Volkov',
                             productEngineerRE: 'Elena Volkov',
                             status: ReadinessStatus.NOT_MADE,
                             imageUrl: 'https://picsum.photos/seed/relay/600/400',
@@ -102,7 +98,6 @@ export const MARS_ROVER_HIERARCHY: SystemNode = {
                         {
                             id: 'HVI-044',
                             name: 'High-Voltage Isolation Barrier',
-                            owner: 'Dr. Elena Volkov',
                             productEngineerRE: 'Elena Volkov',
                             status: ReadinessStatus.DEFERRED,
                             imageUrl: 'https://picsum.photos/seed/isolation/600/400',
@@ -121,7 +116,6 @@ export const MARS_ROVER_HIERARCHY: SystemNode = {
                 {
                     id: 'TSA-009',
                     name: 'Thermal Sensor Array',
-                    owner: 'Arjun Nair',
                     productEngineerRE: 'Arjun Nair',
                     status: ReadinessStatus.NOT_MADE,
                     imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAcQkIW0S4eXubZ39rQLKjBXxV9oNSBXT7b7qJ1aH_MSBamGrAhLAkD-zaQhn6sibPsoxpQV9DhhkAc3XLfjMRPPCniTF8dNY1LNj0_Fqs3P_P4wyznu-9NMowHq4gRjjGAo1KRBr4dNWY2Pfx1IolHcL9C6mmotId2G-a7MdnqhsW1gvhO4SOw1RHe0JOWQjVh2GQopnYgFX3ngn-qq-nsHHhG4lFUdGDj8GCKqyn4-1M4k6roHmx4YWOetU7uuVgEhBDVlhf8bA0',
@@ -133,7 +127,6 @@ export const MARS_ROVER_HIERARCHY: SystemNode = {
                         {
                             id: 'CIM-991',
                             name: 'Cryogenic Interface Module',
-                            owner: 'Arjun Nair',
                             productEngineerRE: 'Arjun Nair',
                             status: ReadinessStatus.DEFERRED,
                             imageUrl: 'https://picsum.photos/seed/cryo/600/400',
@@ -144,7 +137,6 @@ export const MARS_ROVER_HIERARCHY: SystemNode = {
                 {
                     id: 'EPS-772',
                     name: 'Emergency Protocol System',
-                    owner: 'Sarah Chen',
                     productEngineerRE: 'Sarah Chen',
                     status: ReadinessStatus.AVAILABLE,
                     imageUrl: 'https://picsum.photos/seed/emergency/600/400',
@@ -158,7 +150,6 @@ export const MARS_ROVER_HIERARCHY: SystemNode = {
         {
             id: 'PWR-402',
             name: 'Power Distribution',
-            owner: 'James Miller',
             productEngineerRE: 'James Miller',
             status: ReadinessStatus.IN_PROGRESS,
             imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDVz8CdQhP_jqfYVWWirpLq_0JM0QgTYMRe4nni2FzgzJAppPqDSKjePWsOlr3bmivT1a0A99K15uWxlr3PPxvRtJddXdQHMmOi_s2WHjozbM2cAQgr2cilKhvTA4uuAbJtczAAsAdWxHBfT-6D28oCMmIdjdeztVZxCmqpmXK1ymhNfr7CKjSiEbwZnNx2kxUPV_NYc4Wbfj8Xc5AoMg7-lJIZoCgoaw2zMvM_4dormlboUXxU51gd0mijuVnrvnzbJ2mEbOhf79U',
@@ -169,7 +160,6 @@ export const MARS_ROVER_HIERARCHY: SystemNode = {
                 {
                     id: 'SLR-001',
                     name: 'Solar Array Interface',
-                    owner: 'Sarah Chen',
                     productEngineerRE: 'Sarah Chen',
                     status: ReadinessStatus.AVAILABLE,
                     imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDVz8CdQhP_jqfYVWWirpLq_0JM0QgTYMRe4nni2FzgzJAppPqDSKjePWsOlr3bmivT1a0A99K15uWxlr3PPxvRtJddXdQHMmOi_s2WHjozbM2cAQgr2cilKhvTA4uuAbJtczAAsAdWxHBfT-6D28oCMmIdjdeztVZxCmqpmXK1ymhNfr7CKjSiEbwZnNx2kxUPV_NYc4Wbfj8Xc5AoMg7-lJIZoCgoaw2zMvM_4dormlboUXxU51gd0mijuVnrvnzbJ2mEbOhf79U',

@@ -3,7 +3,6 @@ import { ReadinessStatus, SystemNode } from '../../src/types';
 export const LUNAR_BASE_HIERARCHY: SystemNode = {
     id: 'LUN-001',
     name: 'Artemis Lunar Base',
-    owner: 'Dr. Sarah Kerman',
     productEngineerRE: 'Sarah Kerman',
     status: ReadinessStatus.IN_PROGRESS,
     imageUrl: 'https://picsum.photos/seed/moon/600/400',
@@ -14,7 +13,6 @@ export const LUNAR_BASE_HIERARCHY: SystemNode = {
         {
             id: 'LSS-001',
             name: 'Life Support System',
-            owner: 'Bill Wilson',
             productEngineerRE: 'Bill Wilson',
             status: ReadinessStatus.IN_PROGRESS,
             imageUrl: 'https://picsum.photos/seed/oxygen/600/400',
@@ -25,7 +23,6 @@ export const LUNAR_BASE_HIERARCHY: SystemNode = {
                 {
                     id: 'H2O-001',
                     name: 'Water Reclamation',
-                    owner: 'Linda Sue',
                     productEngineerRE: 'Linda Sue',
                     status: ReadinessStatus.NOT_MADE,
                     imageUrl: 'https://picsum.photos/seed/water/600/400',

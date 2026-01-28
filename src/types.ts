@@ -17,7 +17,6 @@ export interface TestAsset {
 export interface SystemNode {
   id: string;
   name: string;
-  owner: string;
   productEngineerRE: string; // Responsible Engineer for the product
   status: ReadinessStatus;
   imageUrl: string;
