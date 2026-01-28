@@ -7,10 +7,10 @@ type SystemModule = {
 };
 
 // Helper to create a Workspace from a SystemNode
-const createWorkspace = (system: SystemNode, index: number, source: 'Example' | 'Private'): Workspace => {
+const createWorkspace = (system: SystemNode, folderName: string, index: number, source: 'Example' | 'Private'): Workspace => {
     return {
         id: `ws-${source.toLowerCase()}-${index}`,
-        name: source === 'Private' ? system.name : `${source} - ${system.name}`,
+        name: folderName,
         rootNode: system
     };
 };
@@ -33,7 +33,12 @@ export const loadSystems = (): Workspace[] => {
             const isExample = path.includes('Example');
             const source = isExample ? 'Example' : 'Private';
 
-            workspaces.push(createWorkspace(mod.default, index, source));
+            // Extract folder name from path: ./FolderName/index.ts
+            const pathParts = path.split('/');
+            // pathParts[0] is '.', pathParts[1] is FolderName
+            const folderName = pathParts[1];
+
+            workspaces.push(createWorkspace(mod.default, folderName, index, source));
         }
     });
 
