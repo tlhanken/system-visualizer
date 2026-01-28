@@ -17,9 +17,23 @@ type FilterType = ReadinessStatus | 'NO_ASSETS' | 'SYSTEM' | 'ASSET';
 type ViewTab = 'architecture' | 'workflow';
 type SortOption = 'alphabetical' | 'reverse' | 'recent';
 
+const getMaxDepth = (node: SystemNode): number => {
+  if (!node.subsystems || node.subsystems.length === 0) return 0;
+  return 1 + Math.max(...node.subsystems.map(getMaxDepth));
+};
+
 const App: React.FC = () => {
   const [workspaces, setWorkspaces] = useState<Workspace[]>(INITIAL_WORKSPACES);
-  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>(INITIAL_WORKSPACES[0].id);
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>(() => {
+    try {
+      const accessLog = JSON.parse(localStorage.getItem('workspace_access_log') || '{}');
+      const sortedIds = Object.keys(accessLog).sort((a, b) => accessLog[b] - accessLog[a]);
+      const recentId = sortedIds.find(id => INITIAL_WORKSPACES.some(ws => ws.id === id));
+      return recentId || INITIAL_WORKSPACES[0].id;
+    } catch {
+      return INITIAL_WORKSPACES[0].id;
+    }
+  });
   const [activeTab, setActiveTab] = useState<ViewTab>('architecture');
   const [isWorkspaceDropdownOpen, setIsWorkspaceDropdownOpen] = useState(false);
   const workspaceRef = useRef<HTMLDivElement>(null);
@@ -94,6 +108,25 @@ const App: React.FC = () => {
     setExpandedNodes(getAllNodeIds(activeWorkspace.rootNode));
     setSelectedAsset(null);
   }, [activeWorkspace, getAllNodeIds]);
+
+  const expandToLevel = useCallback((level: number) => {
+    const newExpanded = new Set<string>();
+    const traverse = (node: SystemNode, currentDepth: number) => {
+      // Always expand root (depth 0) if level >= 0?
+      // Level 0: Root collapsed (expand nothing? or just root?)
+      // Assume Level 0 means 'Show Root Only', so root is NOT expanded.
+      // Level 1 means 'Show Children of Root', so root IS expanded.
+
+      if (currentDepth < level) {
+        newExpanded.add(node.id);
+      }
+      if (node.subsystems) {
+        node.subsystems.forEach(sub => traverse(sub, currentDepth + 1));
+      }
+    };
+    traverse(activeWorkspace.rootNode, 0);
+    setExpandedNodes(newExpanded);
+  }, [activeWorkspace]);
 
   const toggleExpand = useCallback((id: string) => {
     setExpandedNodes(prev => {
@@ -627,6 +660,8 @@ const App: React.FC = () => {
               onToggleExpand={toggleExpand}
               onExpandAll={expandAll}
               onCollapseAll={collapseAll}
+              onExpandToLevel={expandToLevel}
+              maxDepth={getMaxDepth(activeWorkspace.rootNode)}
               searchQuery={searchQuery}
             />
 

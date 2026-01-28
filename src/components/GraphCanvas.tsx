@@ -9,6 +9,8 @@ interface GraphCanvasProps {
   onToggleExpand: (id: string) => void;
   onExpandAll: () => void;
   onCollapseAll: () => void;
+  onExpandToLevel: (level: number) => void;
+  maxDepth: number;
   searchQuery: string;
 }
 
@@ -70,6 +72,8 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
   onToggleExpand,
   onExpandAll,
   onCollapseAll,
+  onExpandToLevel,
+  maxDepth,
   searchQuery
 }) => {
   const [zoom, setZoom] = useState(0.8);
@@ -363,9 +367,25 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
           </div>
         </div>
 
-        <div className="bg-background-dark/90 backdrop-blur-md border border-white/10 p-2 rounded-lg shadow-2xl flex items-center gap-3 w-fit" onMouseDown={e => e.stopPropagation()}>
-          <button onClick={onCollapseAll} className="px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-white transition-all">Collapse All</button>
-          <button onClick={onExpandAll} className="px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary hover:bg-primary/10 rounded transition-all">Expand All</button>
+
+        <div className="bg-background-dark/90 backdrop-blur-md border border-white/10 p-2 rounded-lg shadow-2xl flex flex-col gap-2 w-fit" onMouseDown={e => e.stopPropagation()}>
+          <div className="flex items-center gap-3">
+            <button onClick={onExpandAll} className="px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary hover:bg-primary/10 rounded transition-all">Expand All</button>
+            <button onClick={onCollapseAll} className="px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-white transition-all">Collapse All</button>
+          </div>
+          <div className="flex items-center gap-2 px-3 pb-1 w-full">
+            <span className="text-[9px] font-bold text-slate-500 uppercase">Levels</span>
+            <input
+              type="range"
+              dir="rtl"
+              min="0"
+              max={maxDepth}
+              defaultValue={1}
+              step="1"
+              onChange={(e) => onExpandToLevel(parseInt(e.target.value))}
+              className="h-1 flex-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary"
+            />
+          </div>
         </div>
       </div>
 
