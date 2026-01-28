@@ -13,3 +13,9 @@ result
 
 # OS
 .DS_Store
+
+# Systems
+systems/*
+!systems/loader.ts
+!systems/Example MarsRover/
+!systems/Example LunarBase/
