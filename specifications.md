@@ -51,16 +51,37 @@ The visual language uses specific colors to denote different types of entities:
     *   Row showing System Name + Asset Name.
     *   **Tooltip**: Custom hover pop-up showing full description and hierarchy context.
 
-#### 3. Asset Sidebar (Workflow View)
+#### 3. Test Workflow View
+*   **Dual-Pane Layout**:
+    *   **Main Canvas**: Interactive Directed Acyclic Graph (DAG) visualizing the test dependency flow.
+    *   **Right Sidebar**: Detailed asset inspector (same as Asset Sidebar).
+*   **Workflow Canvas**:
+    *   **Visualization**: Auto-layout DAG showing dependencies between test assets.
+    *   **Terminals**:
+        *   **Begin Terminal**: "Begin System Testing" node starting the flow.
+        *   **Subsystem Terminals**: "Subsystem Testing Complete" nodes feeding into the flow.
+        *   **End Terminal**: "System Testing Complete" node concluding the flow.
+    *   **Asset Cards**:
+        *   Rectangular cards (`320px` x `125px`) representing individual tests.
+        *   **States**: Default, Selected (Violet glow), Hover (Scale up).
+        *   **Content**: ID, Name, Status Dot, Status Icon, Dependency indicators.
+    *   **Connections**: Smooth Bezier curves linking dependencies.
+        *   *Style**: Grey for default, Violet for selected/active paths.
+    *   **Interactions**:
+        *   Pan/Zoom support.
+        *   "Fit to View" to auto-center the graph.
+        *   Clicking an asset selects it and opens/updates the Sidebar.
+
+#### 4. Asset Sidebar (Inspector)
 *   **Header**:
-    *   Similar to System Sidebar but highlights the specific Asset in **Purple**.
-    *   Includes "People" section with both `Product RE` and `Test RE`.
+    *   Highlights the specific Asset in **Purple**.
+    *   Includes "People" section with `Test RE` (Responsible Engineer).
 *   **Description View**:
     *   Italicized description block.
     *   System Context block showing Parent System and Owner.
     *   "Extended Specs Vault" placeholder (visual only).
 
-#### 4. Navigation & HUD
+#### 5. Navigation & HUD
 *   **Zoom/Pan**: Infinite canvas with smooth zoom (0.2x to 3x).
 *   **Minimap/Legend**:
     *   Floating panel top-left showing status color keys.
@@ -75,32 +96,38 @@ The visual language uses specific colors to denote different types of entities:
 *   **Project Isolation**: Multiple workspaces (`Workspace[]`) with unique IDs.
 *   **Switching**: Dropdown in header to switch active projects.
 *   **Creation**: "New Project" button prompts for name, generates default root node structure.
+*   **Organization**:
+    *   **Sorting**: Sort by Name (A-Z, Z-A) or Recently Accessed.
+    *   **Persistence**: Active workspace and sort preference saved to `localStorage`.
 
 ### System Hierarchy & Logic
-*   **Tree Structure**: recursive `SystemNode` structure.
+*   **Tree Structure**: Recursive `SystemNode` structure.
 *   **Computed Status**:
-    *   A System's status is derived from its **Test Assets**.
+    *   A System's status is derived from its **Test Assets** (and recursively from subsystems).
     *   Logic:
-        *   All Assets Deferred -> **DEFERRED**.
-        *   All Assets Available (or Deferred) -> **AVAILABLE**.
+        *   All Assets Available -> **AVAILABLE**.
+        *   All Assets Deferred -> **DEFERRED** (treated as Available for rollup logic).
         *   All Assets Not Made -> **NOT_MADE**.
         *   Mixed -> **IN_PROGRESS**.
+*   **Navigation**:
+    *   **Tabs**: Switch between `System Architecture` (Graph) and `Test Workflow` (Asset) views.
+    *   **Breadcrumbs**: Ability to navigate up the hierarchy to parent nodes.
 
 ### Test Assets
 *   **Definition**: `TestAsset` items attached to Systems.
-*   **Metadata**: `id`, `name`, `status`, `description`, `testEngineerRE`.
-*   **Rollups**: The Sidebar must recursively traverse all subsystems to show a complete list of required tests for a high-level system.
+*   **Metadata**: `id`, `name`, `status`, `description`, `testEngineerRE`, `dependsOn`.
+*   **Rollups**: The Sidebar recursively traverses all subsystems to show a complete list of required tests for a high-level system.
 
 ### Search Engine
 *   **Scope**: Searches both Systems and Test Assets.
 *   **Smart Filtering**:
-    *   `Type`: Filter by System vs Asset.
-    *   `Status`: Filter by specific readiness states.
-    *   `Empty State`: Filter for "No Assets" to find unpopulated nodes.
+    *   `Type`: Toggle System vs Asset results.
+    *   `Status`: Filter by specific readiness states (Available, In Progress, Pending, Deferred).
+    *   `Special`: "No Test Assets" filter to find empty nodes.
 *   **Behavior**:
     *   Typing (>2 chars) updates results in real-time.
     *   Clicking a result:
         1.  Expands the path to the node.
-        2.  Centers the graph on the node.
+        2.  Centers the graph on the node (Architecture View).
         3.  Selects the node (and asset if applicable).
-        4.  Switches views if needed.
+        4.  Switches to `Workflow` tab if an asset is selected.

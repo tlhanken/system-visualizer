@@ -1,31 +1,51 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# System Visualizer
 
-# Run and deploy your AI Studio app
+A web-based tool for visualizing system architectures, managing readiness status, and tracking test assets. This application allows users to explore hierarchical system nodes, view their status, and manage associated test workflows.
 
-This contains everything you need to run your app locally.
+## Features
 
-View your app in AI Studio: https://ai.studio/apps/drive/1Fz1oub1Aq6TUGMydidXIJRCp9Am6EZY-
+- **System Hierarchy**: Visualize complex system architectures in a recursive tree structure.
+- **Status Tracking**: Computed status based on test assets (Available, In Progress, Not Made, Deferred).
+- **Test Assets**: Manage test workflows and assets attached to systems.
+- **Rollups**: View aggregated stats and assets for high-level systems.
+- **Search**: Smart filtering by system, asset, status, and more.
 
-## Run Locally
+## Development
 
-**Prerequisites:**  Nix (dev environment provided via `flake.nix`)
+This project uses **Nix** for a reproducible development environment and **Just** for command automation.
 
-1. Enter the environment:
-   `direnv allow` (or `nix develop`)
+### Prerequisites
 
-2. Install dependencies:
-   `just install`
+- [Nix](https://nixos.org/download.html)
+- [Direnv](https://direnv.net/)
 
-3. Set the `GEMINI_API_KEY` in `src/.env.local` to your Gemini API key.
+### Getting Started
 
-4. Run the app:
-   `just dev`
+1.  **Enter the environment**:
+    ```bash
+    direnv allow
+    # or
+    nix develop
+    ```
 
-## Development Workflow
+2.  **Install dependencies**:
+    ```bash
+    just install
+    ```
 
-This project uses a spec sheet driver workflow.
-- **Specifications**: See [specifications.md](./specifications.md) for current feature requirements and design specs.
-- **Agent Instructions**: See [agents.md](./agents.md) for how to work with the spec sheet.
+3.  **Run the application**:
+    ```bash
+    just dev
+    ```
+    This runs both the Vite frontend and the Express backend concurrently.
 
+## Documentation
+
+- **[Specifications](./specifications.md)**: Detailed functional and visual specifications for the project.
+- **[Agent Instructions](./agents.md)**: Guidelines for AI agents working on this codebase.
+
+## Project Structure
+
+- `src/`: React frontend (Vite)
+- `server/`: Backend server (Express)
+- `systems/`: System definitions and data
