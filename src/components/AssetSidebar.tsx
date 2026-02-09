@@ -49,11 +49,10 @@ const AssetSidebar: React.FC<AssetSidebarProps> = ({ selectedAsset, system, onSe
       <div className="p-6 border-b border-white/10 shrink-0">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3 overflow-hidden">
-            <div className={`size-10 shrink-0 rounded-lg flex items-center justify-center border transition-all duration-300 ${
-              selectedAsset 
-                ? 'bg-violet-400/10 text-violet-400 border-violet-400/40 shadow-[0_0_15px_rgba(167,139,250,0.1)]' 
+            <div className={`size-10 shrink-0 rounded-lg flex items-center justify-center border transition-all duration-300 ${selectedAsset
+                ? 'bg-violet-400/10 text-violet-400 border-violet-400/40 shadow-[0_0_15px_rgba(167,139,250,0.1)]'
                 : 'bg-primary/10 text-primary border-primary/20'
-            }`}>
+              }`}>
               <span className="material-symbols-outlined text-2xl font-bold">
                 {selectedAsset ? 'biotech' : 'hub'}
               </span>
@@ -71,31 +70,30 @@ const AssetSidebar: React.FC<AssetSidebarProps> = ({ selectedAsset, system, onSe
             </div>
           </div>
           <div className="shrink-0">
-            <span className={`text-[10px] px-2 py-1 font-bold tracking-tighter rounded border whitespace-nowrap transition-colors ${
-              selectedAsset 
-                ? 'bg-violet-400/20 text-violet-400 border-violet-400/30' 
+            <span className={`text-[10px] px-2 py-1 font-bold tracking-tighter rounded border whitespace-nowrap transition-colors ${selectedAsset
+                ? 'bg-violet-400/20 text-violet-400 border-violet-400/30'
                 : 'bg-primary/20 text-primary border-primary/30'
-            }`}>
+              }`}>
               {selectedAsset ? selectedAsset.id : system.id}
             </span>
           </div>
         </div>
-        
+
         <div className="relative rounded overflow-hidden border border-white/10 bg-slate-900 shadow-lg group">
-          <img 
-            alt="Technical Drawing" 
-            className="w-full h-32 object-cover opacity-60 mix-blend-luminosity group-hover:opacity-80 transition-opacity" 
-            src={system.imageUrl} 
+          <img
+            alt="Technical Drawing"
+            className="w-full h-32 object-cover opacity-60 mix-blend-luminosity group-hover:opacity-80 transition-opacity"
+            src={system.imageUrl}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 to-transparent"></div>
           {selectedAsset && (
-             <button 
+            <button
               onClick={() => onSelectAsset?.(null)}
               className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 rounded bg-slate-950/80 border border-white/10 text-[9px] font-bold text-slate-400 hover:text-white hover:border-primary/50 transition-all backdrop-blur-sm"
-             >
-               <span className="material-symbols-outlined text-xs">arrow_back</span>
-               BACK TO SYSTEM
-             </button>
+            >
+              <span className="material-symbols-outlined text-xs">arrow_back</span>
+              BACK TO SYSTEM
+            </button>
           )}
         </div>
 
@@ -139,22 +137,22 @@ const AssetSidebar: React.FC<AssetSidebarProps> = ({ selectedAsset, system, onSe
                 <span className="material-symbols-outlined text-primary text-sm">hub</span>
                 <h3 className="text-slate-200 text-[11px] font-bold tracking-widest uppercase">System Context</h3>
               </div>
-              
+
               <div className="space-y-3">
-                 <div className="flex items-center justify-between text-xs p-3 bg-slate-900/30 border border-white/5 rounded">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">System Parent</span>
-                      <span className="text-slate-200 font-medium">{system.name}</span>
-                    </div>
-                    <span className="text-[9px] font-mono text-primary font-bold">{system.id}</span>
-                 </div>
-                 <div className="flex items-center justify-between text-xs p-3 bg-slate-900/30 border border-white/5 rounded">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">Product RE</span>
-                      <span className="text-slate-200 font-medium">{system.owner}</span>
-                    </div>
-                    <span className="material-symbols-outlined text-sm text-slate-500">person</span>
-                 </div>
+                <div className="flex items-center justify-between text-xs p-3 bg-slate-900/30 border border-white/5 rounded">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">System Parent</span>
+                    <span className="text-slate-200 font-medium">{system.name}</span>
+                  </div>
+                  <span className="text-[9px] font-mono text-primary font-bold">{system.id}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs p-3 bg-slate-900/30 border border-white/5 rounded">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">Product RE</span>
+                    <span className="text-slate-200 font-medium">{system.productEngineerRE}</span>
+                  </div>
+                  <span className="material-symbols-outlined text-sm text-slate-500">person</span>
+                </div>
               </div>
 
               <div className="mt-8 opacity-20 text-center py-10">
@@ -173,8 +171,8 @@ const AssetSidebar: React.FC<AssetSidebarProps> = ({ selectedAsset, system, onSe
               </div>
               <div className="space-y-3">
                 {system.testAssets.map(asset => (
-                  <div 
-                    key={asset.id} 
+                  <div
+                    key={asset.id}
                     onClick={() => onSelectAsset?.(asset)}
                     className="p-3 bg-slate-900/40 rounded border border-white/5 hover:border-violet-400/40 hover:bg-slate-800/60 transition-all cursor-pointer group"
                   >
